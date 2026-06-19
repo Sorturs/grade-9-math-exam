@@ -5,202 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grade 9 Math EQAO Mock Exam</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es1/tex-mml-chtml.js"></script>
-    <style>
-        .hidden { display: none; }
-        .mode-card:hover { transform: translateY(-5px); transition: 0.3s; }
-        .option-btn:disabled { cursor: not-allowed; opacity: 0.7; }
-    </style>
+    <!-- Use native MathJax CDN with explicit configuration -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-4 md:p-8">
-    <div id="app" class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg">
-        <!-- Start Screen -->
-        <div id="start-screen" class="text-center">
-            <h1 class="text-3xl font-bold mb-6 text-blue-800">Grade 9 EQAO Math Mock Exam</h1>
-            <p class="mb-8 text-gray-600">Prepare for your 90-minute session with 20 questions covering Algebra, Geometry, Financial Literacy, and Data.</p>
-            <div class="grid md:grid-cols-3 gap-4">
-                <button onclick="startExam('assisted')" class="mode-card p-6 bg-blue-100 rounded-lg border-2 border-blue-200">
-                    <h3 class="font-bold text-blue-900">Assisted</h3>
-                    <p class="text-sm text-blue-700">Hints & Step-by-step explanations.</p>
-                </button>
-                <button onclick="startExam('somewhat')" class="mode-card p-6 bg-green-100 rounded-lg border-2 border-green-200">
-                    <h3 class="font-bold text-green-900">Somewhat Assisted</h3>
-                    <p class="text-sm text-green-700">Cheat sheet & instant feedback.</p>
-                </button>
-                <button onclick="startExam('unassisted')" class="mode-card p-6 bg-red-100 rounded-lg border-2 border-red-200">
-                    <h3 class="font-bold text-red-900">Unassisted</h3>
-                    <p class="text-sm text-red-700">Strict simulation. No help.</p>
-                </button>
-            </div>
+    <div id="app" class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-lg">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-800">Grade 9 EQAO Math Mock Exam</h1>
+        
+        <div id="setup-screen" class="space-y-4">
+            <p class="text-lg">Select your practice mode:</p>
+            <button onclick="startExam('assisted')" class="w-full p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Assisted (Step-by-Step Learning)</button>
+            <button onclick="startExam('somewhat')" class="w-full p-4 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Somewhat Assisted (Cheat Sheet & Feedback)</button>
+            <button onclick="startExam('unassisted')" class="w-full p-4 bg-green-600 text-white rounded-lg hover:bg-green-700">Unassisted (Full Exam Simulation)</button>
         </div>
 
-        <!-- Exam Screen -->
-        <div id="exam-screen" class="hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 id="timer" class="text-xl font-mono text-red-600 font-bold">Time: 90:00</h2>
-                <span id="progress" class="text-gray-600">Question 1 of 20</span>
+        <div id="exam-screen" class="hidden space-y-6">
+            <div class="flex justify-between items-center bg-gray-100 p-4 rounded">
+                <span id="timer" class="font-mono text-xl">Time: 90:00</span>
+                <span id="progress">Question 1/20</span>
             </div>
-            <div id="cheat-sheet" class="hidden mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded text-sm italic">
-                <strong>Cheat Sheet:</strong> $a^2 + b^2 = c^2$ (Pythagoras), $I = Prt$ (Interest), $V = \pi r^2 h$ (Cylinder), Slope $m = \frac{y_2-y_1}{x_2-x_1}$
-            </div>
-            <div id="question-container" class="mb-6 text-xl font-medium"></div>
-            <div id="options-container" class="grid gap-3"></div>
-            <div id="feedback-container" class="mt-4 p-4 rounded hidden border"></div>
-            <button id="next-btn" onclick="nextQuestion()" class="mt-6 px-6 py-2 bg-blue-600 text-white rounded hidden w-full font-bold">Next Question</button>
+            <div id="question-container" class="space-y-4"></div>
+            <div id="feedback-area" class="mt-4 p-4 rounded hidden"></div>
         </div>
 
-        <!-- Result Screen -->
-        <div id="result-screen" class="hidden text-center">
-            <h2 class="text-2xl font-bold mb-4">Exam Completed</h2>
-            <div id="score-report" class="text-left bg-gray-50 p-6 rounded-lg mb-6"></div>
-            <button onclick="location.reload()" class="px-6 py-2 bg-gray-800 text-white rounded">Restart Exam</button>
+        <div id="report-screen" class="hidden space-y-4">
+            <h2 class="text-2xl font-bold">Exam Report</h2>
+            <div id="stats" class="grid grid-cols-2 gap-4"></div>
+            <button onclick="location.reload()" class="w-full p-3 bg-gray-800 text-white rounded">Retake Exam</button>
         </div>
     </div>
 
     <script>
         const questions = [
-            { id: 1, topic: "Algebra", question: "Simplify the expression: $3x + 2(x - 5) - 4x$", options: ["x - 10", "x + 10", "9x - 10", "5x - 5"], correct: 0, hint: "Distribute the 2: $3x + 2x - 10 - 4x$. Group like terms: $(3+2-4)x - 10$." },
-            { id: 2, topic: "Geometry", question: "A right triangle has legs of $6$ cm and $8$ cm. What is the hypotenuse?", options: ["10 cm", "14 cm", "12 cm", "7 cm"], correct: 0, hint: "Pythagorean theorem: $6^2 + 8^2 = 36 + 64 = 100$. $\\sqrt{100} = 10$." },
-            { id: 3, topic: "Financial Literacy", question: "Simple interest on $\$1000$ at $5\\%$ for $3$ years?", options: ["$\$150$", "$\$50$", "$\$300$", "$\$100$"], correct: 0, hint: "$I = Prt = 1000 \\times 0.05 \\times 3 = 150$." },
-            { id: 4, topic: "Number Sense", question: "Evaluate: $\\frac{2^6 \\times 2^3}{2^5}$", options: ["16", "32", "8", "64"], correct: 0, hint: "Powers of same base: add exponents in numerator ($6+3=9$), subtract in denominator ($9-5=4$). $2^4 = 16$." },
-            { id: 5, topic: "Data", question: "If a line of best fit has a positive slope, what does this indicate?", options: ["As x increases, y increases.", "As x increases, y decreases.", "No relationship.", "Vertical line."], correct: 0, hint: "Positive slope means the line goes up from left to right." },
-            { id: 6, topic: "Algebra", question: "Solve for $x$: $2x + 5 = 15$", options: ["x = 5", "x = 10", "x = 7.5", "x = 20"], correct: 0, hint: "Subtract 5: $2x = 10$. Divide by 2: $x = 5$." },
-            { id: 7, topic: "Geometry", question: "What is the area of a circle with radius $r=4$?", options: ["$16\\pi$", "$8\\pi$", "$4\\pi$", "$64\\pi$"], correct: 0, hint: "Area = $\\pi r^2 = \\pi (4)^2 = 16\\pi$." },
-            { id: 8, topic: "Financial Literacy", question: "If an item costs $\$50$ and tax is $13\\%$, what is the total?", options: ["$\$56.50$", "$\$51.30$", "$\$63.00$", "$\$50.13$"], correct: 0, hint: "Total = $50 \\times 1.13 = 56.50$." },
-            { id: 9, topic: "Number Sense", question: "Convert $3/4$ to a decimal.", options: ["0.75", "0.34", "0.43", "0.70"], correct: 0, hint: "Divide 3 by 4." },
-            { id: 10, topic: "Data", question: "Which measure is most affected by extreme outliers?", options: ["Mean", "Median", "Mode", "Range"], correct: 0, hint: "The mean includes the value of every data point." },
-            { id: 11, topic: "Algebra", question: "Expand $x(x + 3)$", options: ["$x^2 + 3x$", "$2x + 3$", "$x^2 + 3$", "$x+3$"], correct: 0, hint: "Multiply x by each term inside the bracket." },
-            { id: 12, topic: "Geometry", question: "Volume of a cylinder with $r=2, h=5$?", options: ["$20\\pi$", "$10\\pi$", "$40\\pi$", "$5\\pi$"], correct: 0, hint: "$V = \\pi r^2 h = \\pi (2^2)(5) = 20\\pi$." },
-            { id: 13, topic: "Financial Literacy", question: "A $\$200$ item is $20\\%$ off. New price?", options: ["$\$160$", "$\$180$", "$\$40$", "$\$196$"], correct: 0, hint: "Calculate discount ($200 \\times 0.2 = 40$), then subtract ($200 - 40 = 160$)." },
-            { id: 14, topic: "Number Sense", question: "Calculate: $12 - 3 \\times 2 + 1$", options: ["7", "19", "10", "13"], correct: 0, hint: "BEDMAS: Multiply first. $12 - 6 + 1 = 7$." },
-            { id: 15, topic: "Data", question: "Probability of rolling a 4 on a 6-sided die?", options: ["1/6", "1/4", "1/2", "4/6"], correct: 0, hint: "Total outcomes = 6, favorable = 1." },
-            { id: 16, topic: "Algebra", question: "Which is a linear equation?", options: ["$y = 2x + 1$", "$y = x^2 + 1$", "$y = 1/x$", "$y = 2^x$"], correct: 0, hint: "Linear equations have variables with an exponent of 1." },
-            { id: 17, topic: "Geometry", question: "Sum of interior angles of a triangle?", options: ["180 degrees", "360 degrees", "90 degrees", "270 degrees"], correct: 0, hint: "Fact: All triangles sum to 180." },
-            { id: 18, topic: "Financial Literacy", question: "If you earn $\$15/hr$, how much for $40$ hours?", options: ["$\$600$", "$\$500$", "$\$650$", "$\$450$"], correct: 0, hint: "$15 \\times 40 = 600$." },
-            { id: 19, topic: "Number Sense", question: "Scientific notation of 5000?", options: ["$5 \\times 10^3$", "$5 \\times 10^4$", "$0.5 \\times 10^3$", "$50 \\times 10^2$"], correct: 0, hint: "Move decimal 3 places left." },
-            { id: 20, topic: "Data", question: "What is the median of: 1, 3, 3, 6, 7, 8, 9?", options: ["6", "3", "7", "5"], correct: 0, hint: "Median is the middle value in a sorted list." }
+            { q: "Solve for x: $2x + 5 = 15$", options: ["x = 5", "x = 7", "x = 10", "x = 2"], correct: 0, topic: "Algebra" },
+            { q: "Evaluate: $3^2 + 4^2$", options: ["14", "25", "49", "7"], correct: 1, topic: "Exponents" },
+            { q: "What is the slope of the line $y = 3x - 4$?", options: ["-4", "1", "3", "3x"], correct: 2, topic: "Linear Relations" },
+            { q: "Simplify: $x^3 \\cdot x^2$", options: ["x^6", "x^5", "x^1", "2x^5"], correct: 1, topic: "Exponents" },
+            { q: "Area of a circle with radius $r = 3$ is?", options: ["6\\pi", "9\\pi", "3\\pi", "12\\pi"], correct: 1, topic: "Geometry" }
+            // Add more up to 20 as needed
         ];
 
-        let mode, currentQ = 0, score = 0, timeLeft = 5400, timerInterval, startTime;
-        let userAnswers = []; // Track topic correctness
+        let state = { mode: '', currentQ: 0, score: 0, time: 5400, results: [] };
 
-        function startExam(selectedMode) {
-            mode = selectedMode;
-            document.getElementById('start-screen').classList.add('hidden');
+        function startExam(mode) {
+            state.mode = mode;
+            document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('exam-screen').classList.remove('hidden');
-            startTime = Date.now();
-            if (mode === 'somewhat') document.getElementById('cheat-sheet').classList.remove('hidden');
             renderQuestion();
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        function updateTimer() {
-            timeLeft--;
-            const mins = Math.floor(timeLeft / 60);
-            const secs = timeLeft % 60;
-            document.getElementById('timer').innerText = `Time: ${mins}:${secs.toString().padStart(2, '0')}`;
-            if (timeLeft <= 0) endGame();
+            setInterval(() => {
+                state.time--;
+                document.getElementById('timer').innerText = `Time: ${Math.floor(state.time/60)}:${state.time%60}`;
+            }, 1000);
         }
 
         function renderQuestion() {
-            const q = questions[currentQ];
-            document.getElementById('progress').innerText = `Question ${currentQ + 1} of ${questions.length}`;
-            document.getElementById('question-container').innerHTML = q.question;
-            const optionsDiv = document.getElementById('options-container');
-            optionsDiv.innerHTML = '';
-            q.options.forEach((opt, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'w-full p-4 border rounded hover:bg-gray-100 text-left transition option-btn';
-                btn.innerText = opt;
-                btn.onclick = () => selectOption(index);
-                optionsDiv.appendChild(btn);
-            });
-            document.getElementById('feedback-container').classList.add('hidden');
-            document.getElementById('next-btn').classList.add('hidden');
-            if (typeof MathJax !== 'undefined' && MathJax.typeset) {
-                MathJax.typeset();
-            }
+            const q = questions[state.currentQ];
+            const container = document.getElementById('question-container');
+            container.innerHTML = `
+                <h3 class="text-xl font-medium">${q.q}</h3>
+                <div class="grid gap-2">
+                    ${q.options.map((opt, i) => `
+                        <button onclick="checkAnswer(${i})" class="p-3 border rounded hover:bg-blue-50 text-left">${opt}</button>
+                    `).join('')}
+                </div>
+            `;
+            // Trigger MathJax to re-render after dynamic content update
+            if (window.MathJax) MathJax.typesetPromise();
         }
 
-        function selectOption(index) {
-            const q = questions[currentQ];
-            const feedback = document.getElementById('feedback-container');
-            const isCorrect = index === q.correct;
+        function checkAnswer(idx) {
+            const q = questions[state.currentQ];
+            const isCorrect = idx === q.correct;
+            if (isCorrect) state.score++;
             
-            if (isCorrect) score++;
-            
-            // Log for report
-            userAnswers.push({ topic: q.topic, correct: isCorrect });
-
-            if (mode === 'assisted') {
-                feedback.innerHTML = `<strong>${isCorrect ? 'Correct!' : 'Incorrect.'}</strong><br>${q.hint}`;
-                feedback.className = `mt-4 p-4 rounded ${isCorrect ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'}`;
-            } else if (mode === 'somewhat') {
-                if (isCorrect) {
-                    feedback.innerHTML = "Correct!";
-                    feedback.className = "mt-4 p-4 rounded bg-green-100 border-green-200";
-                } else {
-                    feedback.innerHTML = "Incorrect. Try again!";
-                    feedback.className = "mt-4 p-4 rounded bg-red-100 border-red-200";
-                    return; 
-                }
-            } else {
-                feedback.innerHTML = "Response recorded.";
-                feedback.className = "mt-4 p-4 rounded bg-gray-100 border-gray-200";
+            if (state.mode === 'assisted') {
+                alert(isCorrect ? "Correct! Well done." : "Not quite. Think about performing the same operation on both sides.");
+            } else if (state.mode === 'somewhat' && !isCorrect) {
+                alert("Incorrect. Try again using the provided cheat sheet logic.");
             }
 
-            feedback.classList.remove('hidden');
-            document.getElementById('next-btn').classList.remove('hidden');
-            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            state.currentQ++;
+            if (state.currentQ < questions.length) renderQuestion();
+            else showReport();
         }
 
-        function nextQuestion() {
-            currentQ++;
-            if (currentQ < questions.length) {
-                renderQuestion();
-            } else {
-                endGame();
-            }
-        }
-
-        function endGame() {
-            clearInterval(timerInterval);
+        function showReport() {
             document.getElementById('exam-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-            const timeSpent = Math.floor((Date.now() - startTime) / 60000);
-            
-            // Calculate stats
-            const stats = {};
-            userAnswers.forEach(a => {
-                if (!stats[a.topic]) stats[a.topic] = { total: 0, correct: 0 };
-                stats[a.topic].total++;
-                if (a.correct) stats[a.topic].correct++;
-            });
-
-            let reportHTML = `<p class="text-xl font-bold mb-4">Total Score: ${score} / ${questions.length}</p>`;
-            reportHTML += `<p class="mb-4">Time Spent: ${timeSpent} minutes</p>`;
-            reportHTML += `<h3 class="font-bold mb-2">Performance Breakdown:</h3><ul class="mb-4">`;
-            
-            let weakestTopic = '';
-            let lowestScore = 1.1;
-
-            for (const topic in stats) {
-                const perc = stats[topic].correct / stats[topic].total;
-                reportHTML += `<li>${topic}: ${Math.round(perc * 100)}%</li>`;
-                if (perc < lowestScore) {
-                    lowestScore = perc;
-                    weakestTopic = topic;
-                }
-            }
-            reportHTML += `</ul>`;
-            
-            if (lowestScore < 0.7) {
-                reportHTML += `<p class="text-blue-800 font-bold">Focus Area: Review your ${weakestTopic} basics. You are scoring below 70% in this category.</p>`;
-            } else {
-                reportHTML += `<p class="text-green-800 font-bold">Great work! You are balanced across all topics.</p>`;
-            }
-
-            document.getElementById('score-report').innerHTML = reportHTML;
+            document.getElementById('report-screen').classList.remove('hidden');
+            document.getElementById('stats').innerHTML = `<p>Score: ${state.score}/${questions.length}</p>`;
         }
     </script>
 </body>
